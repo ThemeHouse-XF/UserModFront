@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<addon addon_id="ThemeHouse_UserModFront" title="[⌂] User Moderation Queue on Front End" version_string="1.0.1" version_id="1447261019" url="http://xf.themehouse.io/" install_callback_class="ThemeHouse_Install" install_callback_method="install" uninstall_callback_class="ThemeHouse_Install" uninstall_callback_method="uninstall">
+  <admin_navigation/>
+  <admin_permissions/>
+  <admin_style_properties/>
+  <admin_templates/>
+  <admin_template_modifications/>
+  <code_events/>
+  <code_event_listeners>
+    <listener event_id="controller_pre_dispatch" execute_order="10" callback_class="ThemeHouse_Listener_ControllerPreDispatch" callback_method="controllerPreDispatch" active="1" hint="" description=""/>
+    <listener event_id="file_health_check" execute_order="10" callback_class="ThemeHouse_UserModFront_Listener_FileHealthCheck" callback_method="fileHealthCheck" active="1" hint="" description=""/>
+    <listener event_id="init_dependencies" execute_order="10" callback_class="ThemeHouse_Listener_InitDependencies" callback_method="initDependencies" active="1" hint="" description=""/>
+    <listener event_id="load_class" execute_order="10" callback_class="ThemeHouse_UserModFront_Listener_LoadClass" callback_method="loadClassController" active="0" hint="XenForo_ControllerPublic_Member" description="XenForo_ControllerPublic_Member (For XenForo 1.2 and above)" compatibility_switch="1"/>
+    <listener event_id="load_class_controller" execute_order="10" callback_class="ThemeHouse_UserModFront_Listener_LoadClass" callback_method="loadClassController" active="1" hint="" description="(For XenForo 1.1 and below)" compatibility_switch="1"/>
+    <listener event_id="visitor_setup" execute_order="10" callback_class="ThemeHouse_UserModFront_Listener_VisitorSetup" callback_method="visitorSetup" active="1" hint="" description=""/>
+  </code_event_listeners>
+  <cron/>
+  <email_templates/>
+  <email_template_modifications/>
+  <optiongroups/>
+  <permissions>
+    <permission_groups/>
+    <permissions>
+      <permission permission_group_id="general" permission_id="userModFrontEnd" permission_type="flag" default_value="unset" interface_group_id="generalModeratorPermissions" display_order="2000"/>
+    </permissions>
+    <interface_groups/>
+  </permissions>
+  <phrases>
+    <phrase title="permission_general_userModFrontEnd" version_id="1405979555" version_string="1.0.0"><![CDATA[User moderation on front end]]></phrase>
+  </phrases>
+  <route_prefixes/>
+  <style_properties/>
+  <templates>
+    <template title="th_moderator_bar_usermodfrontend" version_id="1406081595" version_string="1.0.0"><![CDATA[<xen:if is="!{$visitor.is_admin} && !{$session.canAdminUsers} && {$session.userModerationCounts.total} && {$visitor.permissions.general.userModFrontEnd}">
+	<a href={xen:link members/moderated} class="userModerationQueue modLink">
+		<span class="itemLabel">{xen:phrase users_awaiting_approval_short}:</span>
+		<span class="itemCount {xen:if {$session.userModerationCounts.total}, 'alert'}">{$session.userModerationCounts.total}</span>
+	</a>
+</xen:if>]]></template>
+    <template title="th_user_moderated_usermodfrontend" version_id="1406081595" version_string="1.0.0"><![CDATA[<xen:title>{xen:phrase users_awaiting_approval}</xen:title>
+
+<form action="{xen:link 'members/moderated/update'}" method="post" class="xenForm formOverlay">
+	<xen:foreach loop="$users" value="$user">
+		<fieldset>
+			<dl class="ctrlUnit">
+				<dt><label for="ctrl_user">{xen:phrase user}:</label></dt>
+				<dd>
+					<a href="{xen:link {xen:if '{$userEditFrontEnd}', 'members/edit-full', 'members'}, $user}" target="_blank">{$user.username}</a> ({$user.email})
+				</dd>
+			</dl>
+		
+			<dl class="ctrlUnit">
+				<dt>{xen:phrase joined}:</dt>
+				<dd><xen:datetime time="{$user.register_date}" /></dd>
+			</dl>
+
+			<xen:if is="{$user.ip}">
+				<dl class="ctrlUnit">
+					<dt>{xen:phrase ip}:</dt>
+					<dd><a href="{xen:link misc/ip-info, '', 'ip={$user.ip}'}" target="_blank">{$user.ip}</a> <xen:if is="{$user.ipHost}">({$user.ipHost})</xen:if></dd>
+				</dl>
+			</xen:if>
+
+			<xen:if is="{$user.spamDetails}">
+				<dl class="ctrlUnit">
+					<dt>{xen:phrase posted}:</dt>
+					<dd>			
+						<xen:foreach loop="{$user.spamDetails}" value="{$detail}">
+							<li>{xen:escape $detail, false}</li>
+						</xen:foreach>
+					</dd>
+				</dl>
+			</xen:if>
+			
+			<dl class="ctrlUnit">
+				<dt><label>{xen:phrase action}:</label></dt>
+				<dd>
+					<ul>
+						<li><label for="ctrl_users{$user.user_id}action_none"><input type="radio" name="users[{$user.user_id}][action]" value="none" id="ctrl_users{$user.user_id}action_none" checked="checked" /> {xen:phrase do_nothing}</label></li>
+						<li><label for="ctrl_users{$user.user_id}action_approve"><input type="radio" name="users[{$user.user_id}][action]" value="approve" id="ctrl_users{$user.user_id}action_approve" /> {xen:phrase approve}</label></li>
+						<li><label for="ctrl_users{$user.user_id}action_reject"><input type="radio" class="Disabler" name="users[{$user.user_id}][action]" value="reject" id="ctrl_users{$user.user_id}action_reject" /> {xen:phrase reject_and_delete_with_rejection_reason}:</label>
+							<ul id="ctrl_users{$user.user_id}action_reject_Disabler">
+							<li><label><input type="text" name="users[{$user.user_id}][reject_reason]" placeholder="{xen:phrase optional}" id="ctrl_users{$user.user_id}reject_reason" />
+								</li>
+							</ul>
+					</li>
+					</ul>
+				</dd>
+			</dl>
+	
+			<dl class="ctrlUnit" style="margin-left:200px;">
+				<label for="ctrl_users{$user.user_id}notify"><input type="checkbox" name="users[{$user.user_id}][notify]" checked="checked" id="ctrl_users{$user.user_id}notify" />
+					{xen:phrase notify_user_if_action_was_taken}</label>
+			</dl>
+		</fieldset>
+	</xen:foreach>
+	
+	
+	<dl class="ctrlUnit submitUnit">
+		<dt></dt>
+		<dd><input type="submit" value="{xen:phrase process_users}" class="button primary" /></dd>
+	</dl>
+
+	<input type="hidden" name="_xfToken" value="{$visitor.csrf_token_page}" />
+</form>]]></template>
+  </templates>
+  <public_template_modifications>
+    <modification template="footer" modification_key="th_copyrightNotice_userModFront" description="Copyright notice for [⌂] User Moderation Queue on Front End" execution_order="1" enabled="1" action="callback">
+      <find><![CDATA[/{xen:phrase (?:xenforo|extra)_copyright}/]]></find>
+      <replace><![CDATA[ThemeHouse_Listener_InitDependencies::copyrightNotice]]></replace>
+    </modification>
+    <modification template="footer" modification_key="th_copyrightNotice_userModFrontEnd" description="Copyright notice for User Moderation Queue on Front End by ThemeHouse" execution_order="1" enabled="1" action="callback">
+      <find><![CDATA[/{xen:phrase (?:xenforo|extra)_copyright}/]]></find>
+      <replace><![CDATA[ThemeHouse_Listener_InitDependencies::copyrightNotice]]></replace>
+    </modification>
+    <modification template="moderator_bar" modification_key="th_moderatorBar_usermodfrontend" description="" execution_order="10" enabled="1" action="preg_replace">
+      <find><![CDATA[#(<xen:hook name="moderator_bar" />)#Us]]></find>
+      <replace><![CDATA[${0}
+<xen:include template="th_moderator_bar_usermodfrontend" />]]></replace>
+    </modification>
+    <modification template="PAGE_CONTAINER" modification_key="th_pageContainer_usermodfrontend" description="Allows mod queue to show if required" execution_order="10" enabled="1" action="preg_replace">
+      <find><![CDATA[#(<xen:if is=".*{\$visitor\.is_moderator} \|\| {\$visitor\.is_admin})(.*">)#Us]]></find>
+      <replace><![CDATA[${1} || {$visitor.permissions.general.userModFrontEnd}${2}]]></replace>
+    </modification>
+  </public_template_modifications>
+  <bb_code_media_sites/>
+  <bb_codes/>
+</addon>
